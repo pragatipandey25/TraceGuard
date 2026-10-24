@@ -1,0 +1,14 @@
+{
+  "name": "traceguard-workspace",
+  "version": "1.0.0",
+  "description": "TraceGuard Web Security Assessment & Remediation Platform",
+  "scripts": {
+    "server": "npm run dev --prefix server",
+    "client": "npm run dev --prefix client",
+    "seed": "npm run seed --prefix server",
+    "test:server": "npm run test --prefix server",
+    "test:client": "npm run test --prefix client",
+    "test": "npm run test --prefix server && npm run test --prefix client",
+    "build:client": "npm run build --prefix client"
+  }
+}
