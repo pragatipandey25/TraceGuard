@@ -27,7 +27,18 @@ app.use(
 // CORS configuration
 app.use(
   cors({
-    origin: config.CLIENT_URL,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      if (
+        origin === config.CLIENT_URL ||
+        origin.endsWith('.vercel.app') ||
+        origin.includes('localhost')
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
