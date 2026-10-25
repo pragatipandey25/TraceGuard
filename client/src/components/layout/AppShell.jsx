@@ -300,8 +300,24 @@ export function AppShell() {
         </header>
 
         {/* Scrollable Page Body */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-          <Outlet />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 flex flex-col justify-between">
+          <div>
+            <Outlet />
+          </div>
+          <footer className="mt-12 pt-4 border-t border-slate-200 dark:border-navy-800 text-[11px] text-slate-500 dark:text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>TraceGuard — Automated Web Security Assessment Platform</span>
+            <span>
+              Created by{' '}
+              <a
+                href="https://github.com/pragatipandey25"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-blue-500 hover:text-blue-400 transition-colors"
+              >
+                Pragati Pandey
+              </a>
+            </span>
+          </footer>
         </main>
       </div>
     </div>

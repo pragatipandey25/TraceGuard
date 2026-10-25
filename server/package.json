@@ -2,6 +2,7 @@
   "name": "traceguard-server",
   "version": "1.0.0",
   "description": "TraceGuard Web Security Assessment Platform Backend",
+  "author": "Pragati Pandey <https://github.com/pragatipandey25>",
   "type": "module",
   "main": "src/server.js",
   "scripts": {

@@ -2,6 +2,7 @@
   "name": "traceguard-workspace",
   "version": "1.0.0",
   "description": "TraceGuard Web Security Assessment & Remediation Platform",
+  "author": "Pragati Pandey <https://github.com/pragatipandey25>",
   "type": "module",
   "scripts": {
     "server": "npm run dev --prefix server",

@@ -2,6 +2,7 @@
   "name": "traceguard-client",
   "private": true,
   "version": "1.0.0",
+  "author": "Pragati Pandey <https://github.com/pragatipandey25>",
   "type": "module",
   "scripts": {
     "dev": "vite",

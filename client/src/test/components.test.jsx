@@ -69,5 +69,6 @@ describe('Landing Page', () => {
     );
     expect(screen.getAllByText(/TraceGuard/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Authorized Testing Policy/i)).toBeInTheDocument();
+    expect(screen.getByText('Pragati Pandey')).toBeInTheDocument();
   });
 });

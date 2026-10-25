@@ -1,7 +1,9 @@
 # 🛡️ TraceGuard
 
 > **Web Security Assessment & Remediation Platform**  
-> An automated, passive web security auditor for developers and development teams to inspect security headers, SSL/TLS certificates, cookies, CORS, and information disclosures on applications they own.
+> An automated, passive web security auditor for developers and development teams to inspect security headers, SSL/TLS certificates, cookies, CORS, and information disclosures on applications they own.  
+>  
+> **Created & Maintained by [Pragati Pandey](https://github.com/pragatipandey25)**
 
 ---
 
@@ -242,3 +244,12 @@ trace-guard/
 ## ⚖️ Legal & Responsible Use Disclaimer
 
 TraceGuard is engineered strictly for assessing applications you own or have explicit, verified authorization to audit. TraceGuard's security score is an internal heuristic based on observable configuration data and **does not guarantee that an application is invulnerable**. Automated checks should complement, not replace, periodic comprehensive penetration testing and secure code review.
+
+---
+
+## 👩‍💻 Author & Project Owner
+
+**Pragati Pandey**  
+- **GitHub**: [@pragatipandey25](https://github.com/pragatipandey25)  
+- **Repository**: [https://github.com/pragatipandey25/TraceGuard](https://github.com/pragatipandey25/TraceGuard)  
+- **Platform**: [TraceGuard Live App](https://traceguard-red.vercel.app)

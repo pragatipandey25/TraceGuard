@@ -192,8 +192,16 @@ export function LandingPage() {
             <span className="font-semibold text-slate-300">TraceGuard</span>
             <span>— Web Security Assessment & Remediation Platform</span>
           </div>
-          <div>
-            <span>Non-intrusive automated auditing • MERN Stack Architecture</span>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Created by</span>
+            <a
+              href="https://github.com/pragatipandey25"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Pragati Pandey
+            </a>
           </div>
         </div>
       </footer>
