@@ -90,21 +90,29 @@ Finding Details:
 - Severity: ${finding.severity}
 - Observed Evidence: ${JSON.stringify(sanitizedEvidence)}`;
 
-  // 1. If key starts with "AIza", treat as Google Gemini
-  if (apiKey.startsWith('AIza')) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' }
-      })
-    });
-    if (!res.ok) throw new Error(`Gemini API error: ${res.statusText}`);
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (text) return JSON.parse(text);
+  // 1. If key starts with "AIza" or "AQ.", treat as Google Gemini
+  if (apiKey.startsWith('AIza') || apiKey.startsWith('AQ.')) {
+    const models = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: 'application/json' }
+          })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return JSON.parse(text);
+        }
+      } catch (e) {
+        // try next model fallback
+      }
+    }
   }
 
   // 2. Default to OpenAI / OpenAI-compatible endpoint
@@ -195,7 +203,7 @@ export function getAiConfiguration() {
     };
   }
 
-  const provider = key.startsWith('AIza')
+  const provider = (key.startsWith('AIza') || key.startsWith('AQ.'))
     ? 'Google Gemini'
     : key.startsWith('sk-')
     ? 'OpenAI'
