@@ -9,7 +9,10 @@ import {
   Lock,
   User,
   Sliders,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles,
+  RefreshCw,
+  Key
 } from 'lucide-react';
 import api from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -19,6 +22,11 @@ export function SettingsPage() {
   const { user } = useAuth();
   const [targets, setTargets] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // AI Assistant status state
+  const [aiStatus, setAiStatus] = useState(null);
+  const [aiTestLoading, setAiTestLoading] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState(null);
 
   // New Target Modal / form
   const [showAddModal, setShowAddModal] = useState(false);
@@ -33,14 +41,38 @@ export function SettingsPage() {
   const fetchTargets = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/targets');
-      if (res.data.success) {
-        setTargets(res.data.data);
+      const [targetsRes, aiRes] = await Promise.all([
+        api.get('/targets'),
+        api.get('/dashboard/ai-status')
+      ]);
+      if (targetsRes.data.success) {
+        setTargets(targetsRes.data.data);
+      }
+      if (aiRes.data.success) {
+        setAiStatus(aiRes.data.data);
       }
     } catch (err) {
-      console.error('Failed to load targets', err);
+      console.error('Failed to load targets or AI status', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestAi = async () => {
+    setAiTestLoading(true);
+    setAiTestResult(null);
+    try {
+      const res = await api.post('/dashboard/ai-test');
+      if (res.data.success) {
+        setAiTestResult({ success: true, ...res.data.data });
+      }
+    } catch (err) {
+      setAiTestResult({
+        success: false,
+        error: err.response?.data?.message || 'Connection test failed'
+      });
+    } finally {
+      setAiTestLoading(false);
     }
   };
 
@@ -232,6 +264,77 @@ export function SettingsPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* AI Assistant Configuration & Connection Status */}
+      <div className="bg-white dark:bg-navy-900 border border-slate-200 dark:border-navy-800 rounded-xl p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-navy-800">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-purple-500" />
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              AI Security Explainer Status
+            </h3>
+          </div>
+          <button
+            onClick={handleTestAi}
+            disabled={aiTestLoading}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-300 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${aiTestLoading ? 'animate-spin' : ''}`} />
+            {aiTestLoading ? 'Testing API...' : 'Test AI Connection'}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-navy-800 space-y-1">
+            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Configured Provider:</span>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${aiStatus?.configured ? 'bg-emerald-500' : 'bg-blue-500'}`} />
+              <span className="font-semibold text-slate-900 dark:text-white text-xs">
+                {aiStatus?.label || 'Checking...'}
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+              {aiStatus?.configured
+                ? 'External LLM key is configured in server/.env.'
+                : 'Using TraceGuard built-in 100% offline security knowledge engine.'}
+            </p>
+          </div>
+
+          <div className="p-3.5 rounded-lg bg-slate-50 dark:bg-navy-850 border border-slate-200 dark:border-navy-800 space-y-1">
+            <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Configuration Path:</span>
+            <span className="font-mono text-slate-700 dark:text-slate-300 text-xs">
+              server/.env &gt; AI_API_KEY
+            </span>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+              Supports Google Gemini (<code className="text-purple-400">AIza...</code>) and OpenAI (<code className="text-purple-400">sk-...</code>).
+            </p>
+          </div>
+        </div>
+
+        {/* Live Test Result Banner */}
+        {aiTestResult && (
+          <div
+            className={`p-3.5 rounded-lg text-xs space-y-2 border ${
+              aiTestResult.success
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                : 'bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400'
+            }`}
+          >
+            <div className="flex items-center justify-between font-semibold">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                Connection Test Successful ({aiTestResult.latencyMs}ms)
+              </span>
+              <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-emerald-500/20">
+                Source: {aiTestResult.source}
+              </span>
+            </div>
+            <p className="text-[11px] leading-relaxed">
+              <strong>Sample Explanation Output:</strong> "{aiTestResult.explanation}"
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Modal: Add Target */}

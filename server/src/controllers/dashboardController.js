@@ -2,6 +2,7 @@ import { Assessment } from '../models/Assessment.js';
 import { Target } from '../models/Target.js';
 import { Finding } from '../models/Finding.js';
 import { calculatePostureScore } from '../services/scanner/findingNormalizer.js';
+import { getAiConfiguration, testAiConnection } from '../utils/aiExplainer.js';
 
 export const getDashboardSummary = async (req, res, next) => {
   try {
@@ -105,6 +106,27 @@ export const getDashboardTrends = async (req, res, next) => {
         timeline,
         categoryDistribution
       }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAiStatus = (req, res) => {
+  const status = getAiConfiguration();
+  res.status(200).json({
+    success: true,
+    data: status
+  });
+};
+
+export const testAiConnectionHandler = async (req, res, next) => {
+  try {
+    const result = await testAiConnection();
+    res.status(200).json({
+      success: true,
+      message: 'AI assistant probe executed successfully',
+      data: result
     });
   } catch (err) {
     next(err);

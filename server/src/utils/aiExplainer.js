@@ -4,8 +4,8 @@ import { config } from '../config/env.js';
  * Expert Security Explainer Service
  * Provides educational, beginner-friendly explanations of security findings.
  * Designed with a comprehensive built-in knowledge base that works 100% offline
- * without any paid AI API key, plus optional fallback/LLM integration when
- * AI_API_KEY is configured.
+ * without any paid AI API key, plus optional external LLM integration (Gemini / OpenAI)
+ * when AI_API_KEY is configured.
  */
 
 const RULE_KNOWLEDGE_BASE = {
@@ -52,17 +52,115 @@ const RULE_KNOWLEDGE_BASE = {
 };
 
 /**
+ * Sanitizes evidence to ensure no secrets or sensitive cookies are transmitted.
+ */
+function sanitizeEvidence(evidence) {
+  if (!evidence || typeof evidence !== 'object') return {};
+  const copy = { ...evidence };
+  const sensitiveKeys = ['cookie', 'cookieHeader', 'authorization', 'token', 'secret', 'password'];
+  for (const key of Object.keys(copy)) {
+    if (sensitiveKeys.some(s => key.toLowerCase().includes(s))) {
+      copy[key] = '[REDACTED_SENSITIVE_DATA]';
+    }
+  }
+  return copy;
+}
+
+/**
+ * Calls an external AI API (Gemini or OpenAI-compatible) if configured.
+ */
+async function queryExternalAI(finding, sanitizedEvidence) {
+  const apiKey = config.AI_API_KEY;
+  if (!apiKey || apiKey.trim() === '') return null;
+
+  const prompt = `You are an expert web application security educator.
+Explain the following security finding clearly and concisely to a web developer.
+Do not invent unverified vulnerabilities. Do not alter the severity.
+Return valid JSON only matching this schema:
+{
+  "explanation": "2-3 sentences explaining what this issue is in simple terms",
+  "practicalImpact": "1-2 sentences on what could go wrong in practice if exploited",
+  "suggestedFix": "Concrete, actionable step-by-step fix recommendations"
+}
+
+Finding Details:
+- Title: ${finding.title}
+- Rule ID: ${finding.ruleId}
+- Category: ${finding.category}
+- Severity: ${finding.severity}
+- Observed Evidence: ${JSON.stringify(sanitizedEvidence)}`;
+
+  // 1. If key starts with "AIza", treat as Google Gemini
+  if (apiKey.startsWith('AIza')) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: 'application/json' }
+      })
+    });
+    if (!res.ok) throw new Error(`Gemini API error: ${res.statusText}`);
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) return JSON.parse(text);
+  }
+
+  // 2. Default to OpenAI / OpenAI-compatible endpoint
+  const apiUrl = process.env.AI_API_URL || 'https://api.openai.com/v1/chat/completions';
+  const model = process.env.AI_MODEL || 'gpt-4o-mini';
+
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: 'system', content: 'You are an application security assistant. Always output valid JSON.' },
+        { role: 'user', content: prompt }
+      ],
+      response_format: { type: 'json_object' }
+    })
+  });
+
+  if (!res.ok) throw new Error(`AI API error: ${res.statusText}`);
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content;
+  if (text) return JSON.parse(text);
+
+  return null;
+}
+
+/**
  * Explains a finding in plain English with actionable next steps.
  * Sanitizes input and evidence, redacting sensitive tokens or cookies.
  */
 export async function generateFindingExplanation(finding) {
-  // Redact any possible sensitive attributes in evidence
-  const sanitizedEvidence = { ...finding.evidence };
-  if (sanitizedEvidence.cookieHeader) {
-    sanitizedEvidence.cookieHeader = '[REDACTED_COOKIE_VALUE]';
+  const sanitizedEvidence = sanitizeEvidence(finding.evidence);
+
+  // 1. If AI_API_KEY is configured, attempt external AI generation
+  if (config.AI_API_KEY && config.AI_API_KEY.trim() !== '') {
+    try {
+      const aiResult = await queryExternalAI(finding, sanitizedEvidence);
+      if (aiResult?.explanation && aiResult?.suggestedFix) {
+        return {
+          source: 'external_ai_provider',
+          explanation: aiResult.explanation,
+          practicalImpact: aiResult.practicalImpact || finding.impact,
+          suggestedFix: aiResult.suggestedFix,
+          generatedAt: new Date()
+        };
+      }
+    } catch (err) {
+      console.warn(`[AI Explainer] External AI request failed (${err.message}). Falling back to built-in knowledge base.`);
+    }
   }
 
-  // 1. Check built-in rule knowledge base
+  // 2. Fall back to built-in rule knowledge base (100% offline & free)
   const builtIn = RULE_KNOWLEDGE_BASE[finding.ruleId];
   if (builtIn) {
     return {
@@ -74,12 +172,67 @@ export async function generateFindingExplanation(finding) {
     };
   }
 
-  // 2. Dynamic synthesis for rules without static templates
+  // 3. Dynamic synthesis for rules without static templates
   return {
     source: 'expert_knowledge_engine',
     explanation: `${finding.title}: ${finding.description}`,
     practicalImpact: finding.impact || 'Misconfigurations of this type weaken the defense-in-depth posture of your web application.',
     suggestedFix: finding.remediation?.summary || 'Review recommended security practices for this rule and apply secure headers or configuration.',
     generatedAt: new Date()
+  };
+}
+
+/**
+ * Returns the current AI configuration status and masked key.
+ */
+export function getAiConfiguration() {
+  const key = config.AI_API_KEY;
+  if (!key || key.trim() === '') {
+    return {
+      configured: false,
+      provider: 'built_in_offline',
+      label: 'Built-in Offline Knowledge Engine (Free & Offline)'
+    };
+  }
+
+  const provider = key.startsWith('AIza')
+    ? 'Google Gemini'
+    : key.startsWith('sk-')
+    ? 'OpenAI'
+    : 'Custom / OpenAI-Compatible Provider';
+
+  const masked = key.length > 8
+    ? `${key.substring(0, 6)}...${key.substring(key.length - 4)}`
+    : '****';
+
+  return {
+    configured: true,
+    provider,
+    maskedKey: masked,
+    label: `${provider} (${masked})`
+  };
+}
+
+/**
+ * Tests the AI explanation connection using a test finding probe.
+ */
+export async function testAiConnection() {
+  const sampleFinding = {
+    title: 'Missing Content-Security-Policy (CSP) Header',
+    ruleId: 'SEC-HDR-CSP-MISSING',
+    category: 'headers',
+    severity: 'Medium',
+    description: 'The response does not include a Content-Security-Policy header.',
+    evidence: { headerChecked: 'Content-Security-Policy', observedValue: null }
+  };
+
+  const startTime = Date.now();
+  const result = await generateFindingExplanation(sampleFinding);
+  const latencyMs = Date.now() - startTime;
+
+  return {
+    ...result,
+    latencyMs,
+    testedAt: new Date()
   };
 }
