@@ -89,7 +89,7 @@ export function LandingPage() {
               to="/login"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 text-base font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg transition-all"
             >
-              Log in with Demo Account
+              Sign In to Workspace
             </Link>
           </div>
 

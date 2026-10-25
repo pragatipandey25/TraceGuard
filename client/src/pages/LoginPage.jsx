@@ -26,12 +26,6 @@ export function LoginPage() {
     }
   };
 
-  const handleDemoFill = () => {
-    setEmail('auditor@traceguard.dev');
-    setPassword('Password123!');
-    setError('');
-  };
-
   return (
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -107,20 +101,6 @@ export function LoginPage() {
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
-
-          {/* Quick Demo Login Preset */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80">
-            <p className="text-[11px] text-slate-400 text-center mb-2.5">
-              Testing locally? Click below to load demo credentials:
-            </p>
-            <button
-              type="button"
-              onClick={handleDemoFill}
-              className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <span>Fill Demo Credentials (auditor@traceguard.dev)</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>
