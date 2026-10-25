@@ -29,4 +29,7 @@ async function startServer() {
   process.on('SIGTERM', () => handleExit('SIGTERM'));
 }
 
-startServer();
+startServer().catch((error) => {
+  console.error(`[TraceGuard Server] Failed to start: ${error.message}`);
+  process.exitCode = 1;
+});

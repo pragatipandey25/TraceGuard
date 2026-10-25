@@ -67,6 +67,48 @@ Open **`http://localhost:5173`** in your browser!
 
 ---
 
+## ☁️ Deploying to Vercel
+
+TraceGuard is configured as a Vercel monorepo deployment:
+
+- The React/Vite client is built from `client/` and served from `client/dist`.
+- The Express API is exposed through the serverless function in `api/[...path].js`.
+- MongoDB Atlas is required for the deployed API.
+
+### 1. Import the repository
+
+In Vercel, select **Add New Project**, import this repository, and leave the project root set to the repository root. The included `vercel.json` supplies the install, build, output, SPA-routing, and API-function settings.
+
+### 2. Add environment variables
+
+Add these variables in the Vercel project settings for the **Production**, **Preview**, and **Development** environments as needed:
+
+```env
+NODE_ENV=production
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>
+JWT_SECRET=<long-random-secret-at-least-32-characters>
+JWT_EXPIRES_IN=1d
+CLIENT_URL=https://<your-vercel-domain>
+SCAN_TIMEOUT_MS=15000
+MAX_CONCURRENT_SCANS=2
+MAX_SCANS_PER_HOUR=20
+AI_API_KEY=
+```
+
+Add the Vercel deployment domain to the MongoDB Atlas network access allowlist. For a quick deployment, Atlas can use `0.0.0.0/0`, but database credentials and a strong `JWT_SECRET` must still be used.
+
+### 3. Deploy and verify
+
+Deploy the project, then open:
+
+```text
+https://<your-vercel-domain>/api/health
+```
+
+The response should contain `"status": "healthy"`. The frontend and API use the same domain, so no separate API URL is needed.
+
+---
+
 ## 🧭 How to Use TraceGuard
 
 ```
