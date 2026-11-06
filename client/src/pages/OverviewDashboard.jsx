@@ -32,6 +32,52 @@ import { SeverityBadge, StatusBadge } from '../components/common/Badge.jsx';
 import { CardSkeleton } from '../components/common/LoadingSkeleton.jsx';
 import { EmptyState } from '../components/common/EmptyState.jsx';
 
+function SeverityTooltip({ active, payload }) {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const color = data.payload?.color || data.color || '#3b82f6';
+    return (
+      <div className="bg-white dark:bg-navy-850 border border-slate-200 dark:border-navy-700 px-3 py-1.5 rounded-lg shadow-lg text-xs">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-2.5 h-2.5 rounded-full shrink-0"
+            style={{ backgroundColor: color }}
+          />
+          <span className="font-medium text-slate-700 dark:text-slate-200">
+            {data.name}:
+          </span>
+          <span className="font-bold text-slate-900 dark:text-white font-mono">
+            {data.value}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
+function TrendTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-navy-850 border border-slate-200 dark:border-navy-700 px-3 py-2 rounded-lg shadow-lg text-xs">
+        <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+          {label}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+          <span className="font-medium text-slate-700 dark:text-slate-200">
+            Posture Score:
+          </span>
+          <span className="font-bold text-slate-900 dark:text-white font-mono">
+            {payload[0].value}
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export function OverviewDashboard() {
   const [summary, setSummary] = useState(null);
   const [trends, setTrends] = useState(null);
@@ -260,13 +306,8 @@ export function OverviewDashboard() {
                   <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} tickLine={false} />
                   <YAxis domain={[0, 100]} stroke="#94a3b8" fontSize={10} tickLine={false} />
                   <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#1e293b',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      color: '#fff'
-                    }}
+                    content={<TrendTooltip />}
+                    wrapperStyle={{ outline: 'none', zIndex: 50 }}
                   />
                   <Area
                     type="monotone"
@@ -317,13 +358,8 @@ export function OverviewDashboard() {
                     ))}
                   </Pie>
                   <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      borderColor: '#1e293b',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      color: '#fff'
-                    }}
+                    content={<SeverityTooltip />}
+                    wrapperStyle={{ outline: 'none', zIndex: 50 }}
                   />
                 </PieChart>
               </ResponsiveContainer>
